@@ -11,6 +11,8 @@ public class Core : MonoBehaviour
     public float playHeight = 4;
     public float paddleLevel = -4;
 
+    public Transform background;
+
     void Start()
     {
         
@@ -18,6 +20,6 @@ public class Core : MonoBehaviour
 
     void Update()
     {
-        
+        background.localScale = new Vector2(playRange * 2, playHeight * 2);
     }
 }

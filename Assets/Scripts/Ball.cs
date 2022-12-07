@@ -8,14 +8,19 @@ public class Ball : MonoBehaviour
     public Rigidbody2D rb;
     public CircleCollider2D circ;
 
-    public float speed = 10;
     public float downwardNudge = -0.2f;
+    public float speed;
+    public float speedDefault = 10f;
+    public float speedIncrease = 0.1f;
+    public float speedMax = 30f;
     
     void Start()
     {
-        core = GameObject.Find("Core").GetComponent<Core>();
+        core = GameObject.FindWithTag("Core").GetComponent<Core>();
         rb = GetComponent<Rigidbody2D>();
         circ = GetComponent<CircleCollider2D>();
+
+        speed = speedDefault;
     }
 
     void Update()
@@ -28,7 +33,7 @@ public class Ball : MonoBehaviour
         if (rb.position.x < -core.playRange && rb.velocity.x < 0)
         {
             Reflect(false);
-            rb.position += (core.playRange - rb.position.x) * 2 * Vector2.right;
+            rb.position += (core.playRange + rb.position.x) * 2 * Vector2.right;
         }
         if (rb.position.x > core.playRange && rb.velocity.x > 0)
         {
@@ -39,6 +44,13 @@ public class Ball : MonoBehaviour
         {
             Reflect(true);
             rb.position += (core.playHeight - rb.position.y) * 2 * Vector2.up;
+        }
+
+        if (rb.position.y < core.paddleLevel - 3)
+        {
+            rb.position = Vector2.zero;
+            rb.velocity = Vector2.down;
+            speed = speedDefault;
         }
     }
 
@@ -53,6 +65,21 @@ public class Ball : MonoBehaviour
                 case "Paddle":
                     if (rb.velocity.y < 0)
                         ReflectOffPaddle(collision);
+                    break;
+                case "Block":
+                    Vector2 thisSize = collision.GetComponent<BoxCollider2D>().size;
+                    Vector2 distance = new Vector2(collision.transform.position.x - rb.position.x, collision.transform.position.y - rb.position.y);
+                    distance = new Vector2(Mathf.Abs(distance.x), Mathf.Abs(distance.y));
+                    if (distance.x > thisSize.x * 0.25f &&
+                        ((rb.position.x < collision.transform.position.x && rb.velocity.x > 0) ||
+                        (rb.position.x > collision.transform.position.x && rb.velocity.x < 0)))
+                        Reflect(false);
+                    if (distance.y > thisSize.y * 0.25f &&
+                        ((rb.position.y < collision.transform.position.y && rb.velocity.y > 0) ||
+                        (rb.position.y > collision.transform.position.y && rb.velocity.y < 0)))
+                        Reflect(true);
+
+                    collision.GetComponent<Block>().Hit();
                     break;
             }
         }
@@ -74,19 +101,17 @@ public class Ball : MonoBehaviour
         else
         {
             if (axis)
-                rb.velocity *= Vector2.down;
+                rb.velocity = new Vector2(rb.velocity.x, -rb.velocity.y);
             else
-                rb.velocity *= Vector2.left;
+                rb.velocity = new Vector2(-rb.velocity.x, rb.velocity.y);
         }
+        speed += speedIncrease;
     }
 
     public void ReflectOffPaddle(Collider2D paddle)
     {
-        float originToBall = Mathf.Abs(rb.position.x - paddle.transform.position.x);
-        float reflectPoint = (100 * originToBall) / (paddle.GetComponent<BoxCollider2D>().size.x * 0.5f);
-        if (rb.position.x < paddle.transform.position.x)
-            reflectPoint = -reflectPoint;
-
-        rb.velocity = new Vector2(paddle.GetComponent<Paddle>().reflectAngle * reflectPoint, 1).normalized;
+        Vector2 direction = rb.position - (Vector2)paddle.transform.position;
+        rb.velocity = new Vector2(direction.x * paddle.GetComponent<Paddle>().reflectScale, 1).normalized;
+        speed += speedIncrease;
     }
 }

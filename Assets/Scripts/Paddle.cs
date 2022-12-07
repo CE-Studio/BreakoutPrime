@@ -9,11 +9,11 @@ public class Paddle : MonoBehaviour
     public BoxCollider2D box;
 
     public float speed = 12.5f;
-    public float reflectAngle = 70f;
+    public float reflectScale = 1.5f;
 
     void Start()
     {
-        core = GameObject.Find("Core").GetComponent<Core>();
+        core = GameObject.FindWithTag("Core").GetComponent<Core>();
         rb = GetComponent<Rigidbody2D>();
         box = GetComponent<BoxCollider2D>();
     }
